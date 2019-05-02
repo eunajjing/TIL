@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+
+    <title>test</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <style>
+        body {
+            padding: 1rem;
+        }
+
+        .panel {
+            margin: 1rem;
+        }
+
+        .contentinfo {
+            text-align: right
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bs-example-modal-lg">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Modal title</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="contentinfo">
+                        <span class="email">이메일</span> | <span class="updated_at">업뎃일</span>
+                    </div>
+                    <br />
+                    <div class="content">
+                        내용
+                    </div>
+                </div>
+
+                <div class="commentDiv">
+
+                </div>
+            </div>
+
+
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap.native@2.0.26/dist/bootstrap-native.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</body>
+<script>
+
+
+    window.onload = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        axios.get(`http://comento.cafe24.com/detail.php?req_no=` + urlParams.get('req_no'))
+            .then((res) => {
+                const { title, email, updated_at, contents } = res.data.detail.article;
+                const titleTag = document.querySelector('.modal-title');
+                const contentTag = document.querySelector('.content');
+                const emailTag = document.querySelector('.email');
+                const updated_atTag = document.querySelector('.updated_at');
+
+                titleTag.innerText = title;
+                contentTag.innerText = contents;
+                emailTag.innerText = email;
+                updated_atTag.innerText = updated_at;
+
+                if (res.data.detail.replies.length != 0) {
+                    const { replies } = res.data.detail;
+                    const commentlist = replies.map(({ email, updated_at, contents } = comment) => {
+                        return `<div class="panel panel-primary">`+
+                                    `<div class="panel-heading">`+ email + `</div>`+
+                                    `<div class="panel-body">`+ contents+`<br/><br/>`+updated_at+`</div>`+
+                                `</div>`;
+                    });
+                    const commentDiv = document.querySelector('.commentDiv');
+                    commentDiv.innerHTML=commentlist;
+                }                
+            });
+    }
+</script>
+
+</html>

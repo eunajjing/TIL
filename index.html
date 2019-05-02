@@ -48,7 +48,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                    <button type="button" class="close"><span
                             aria-hidden="true">&times;</span></button>
                     <h4 class="modal-title">필터</h4>
                 </div>
@@ -59,13 +59,13 @@
                             &ensp;
                             <label for="category1">카테고리1</label>
                         </div>
-                        &emsp; 
+                        &emsp;
                         <div class="input-group">
                             <input type="checkbox" class="category" value="2" checked="checked">
                             &ensp;
                             <label for="category1">카테고리2</label>
-                        </div>    
-                        &emsp; 
+                        </div>
+                        &emsp;
                         <div class="input-group">
                             <input type="checkbox" class="category" value="3" checked="checked">
                             &ensp;
@@ -74,7 +74,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="submitBtn">저장</button>
+                    <button type="button" class="btn btn-primary" id="submitBtn" data-dismiss="modal">저장</button>
                 </div>
             </div>
         </div>
@@ -83,8 +83,7 @@
 
 
     <div id="headDiv">
-        <span class="floatL"><button class="btn btn-primary" data-toggle="modal"
-                data-target="#filterModal">필터</button></span>
+        <span class="floatL"><button class="btn btn-primary" id="filterBtn">필터</button></span>
         <span class="floatR btn-group" data-toggle="button">
             <button id="asc" class="btn btn-default active">오름차순</button> <button id="desc"
                 class="btn btn-default">내림차순</button>
@@ -94,25 +93,25 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap.native@2.0.26/dist/bootstrap-native.min.js"></script>
-
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </body>
 <script>
     let page = 1;
-    let categoryFilter;
-
+    let categoryFilter = "1,2,3";
+    let adpage = 1;
+    const modalInstance = new Modal(document.querySelector("#filterModal"));
 
     const getListData = async (categoryFilter) => {
-        const res = await fetch('http://comento.cafe24.com/request.php?page=' + page + '&ord=asc&category=' + categoryFilter);
-        const resjson = await res.json();
-        page++;
-        return resjson.list;
-    }
+            const res = await axios.get('http://comento.cafe24.com/request.php?page=' + page + '&ord=asc&category=' + categoryFilter);
+            page++;
+            return res.data.list;
+        };
 
     const getCategoryName = async (category_no) => {
-        category_no = Number(category_no);
-        const res = await fetch('http://comento.cafe24.com/category.php');
-        const resjson = await res.json();
-        return resjson.list[category_no + 1].name;
+            category_no = Number(category_no);
+            const res = await axios.get('http://comento.cafe24.com/category.php');
+            const test = await res.data.list[category_no + 1].name;
+            return test;   
     }
 
     const contentSubString = (contents) => {
@@ -121,49 +120,97 @@
         return contents;
     }
 
-    const onlyonecontent = ({ category_no, no, email, updated_at, title, contents } = post) => {
+// 내일은 리턴 프로미스
 
-        if (contents.length > 100) {
-            contents = contentSubString(contents);
-        }
-        const categoryName = getCategoryName(category_no);
+    const makehtml = async (result) => {
+            const contentsHtml = result.map(({ category_no, no, email, updated_at, title, contents } = result) => {
 
-        let returnData = `<div class="panel panel-primary">
+                if (contents.length > 100) {
+                        contents = contentSubString(contents);
+                }
+
+                const categoryName =  getCategoryName(category_no);
+
+                //const async_contents_value = await contents
+                const aync_categoryName_value = await categoryName
+                return `<div class="panel panel-primary">
             <div class="panel-heading">
-                <span class="floatL categoryName">`+ categoryName + `</span>
+                <span class="floatL categoryName">`+ aync_categoryName_value + `</span>
                 <span class="floatR no">`+ no + `</span>
             </div>
             <div class="panel-body">
                 <span class="email">`+ email + `</span> | <span class="updated_at">` + updated_at + `</span> <br />
-                <h4>`+ title + `</h4>
-                <div class="contents">`
-            + contents +
-            `</div>
+                <h4><a href="detail.html?req_no=`+ no + `">` + title + `</a></h4>
+                    <div class="contents">`
+                    + async_contents_value +
+                    `</div>
             </div>
-        </div>`
+        </div>`;
+            });
+            return contentsHtml;
+        }
 
-        return returnData;
-    }
+        const makeads = async (html) => {
+            const res = await axios.get('http://comento.cafe24.com/ads.php?page'+adpage+'&limit=1');
+            const imgname = res.data.list[0].img;
+            const img = await axios.get('http://comento.cafe24.com/public/images/'+imgname);
+            adpage++;
+
+            
+
+        }
 
     const makelist = async () => {
-        const listDatas = await getListData(categoryFilter);
-        const list = listDatas.map((post) => onlyonecontent(post));
-        let htmlTags = '';
-        list.forEach(element => {
-            htmlTags += element
-        });
-        const contentDiv = document.querySelector('#contentDiv');
-        contentDiv.innerHTML += htmlTags;
+        const data = await getListData(categoryFilter);
+        const html = await makehtml(data);
+        console.log(html);
+        // const htmlAddAd = await makeads(html);
+        
+        // await ((html) => {
+        //     console.log(html);
+        //     let htmlTags = '';
+        //         html.forEach(element => {
+        //             htmlTags += element
+        //         });
+        //         const contentDiv = document.querySelector('#contentDiv');
+        //         contentDiv.innerHTML += htmlTags;
+        // });
     }
 
     const categoryFilterCheck = () => {
-        const checkedValue = document.querySelector('.category:checked').value;
-    }
-
-    window.onload = async () => {
-        await categoryFilterCheck();
+        const checkedValue = document.querySelectorAll('.category:checked');
+        let categoryTemp = "";
+        checkedValue.forEach(element => {
+            categoryTemp += element.value + ",";
+        })
+        categoryFilter = categoryTemp.substring(0, categoryTemp.length - 1);
         makelist();
     }
+
+        window.onload = () => {
+            categoryFilterCheck();
+        }
+
+    const submitBtn = document.querySelector("#submitBtn");
+    submitBtn.addEventListener("click", () => {
+        categoryFilterCheck();
+    });
+    const filterBtn = document.querySelector("#filterBtn");
+    let categorycheckbox;
+    filterBtn.addEventListener("click", () => {
+        // const categoryArray = categoryFilter.split(',');
+        // const categorycheckbox = document.querySelectorAll('.category');
+        // categoryArray.forEach((element)=>{
+        //         categorycheckbox[element-1].setAttribute( 'checked', 'checked' );
+        //     });
+        categorycheckbox = document.querySelectorAll('.category:checked');
+        modalInstance.show();
+    });
+    const closeBtn = document.querySelector(".close");
+    closeBtn.addEventListener("click", () => {
+        // console.log(categorycheckbox);
+    })
+
 
     const getScrollTop = () => {
         return (window.pageYOffset !== undefined) ? window.pageYOffset : (document.documentElement || document.body.parentNode || document.body).scrollTop;
