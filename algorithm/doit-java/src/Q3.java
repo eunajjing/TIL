@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-class CodeRunner {
+class Q3 {
 
     public static void main(String[] args) {
 
@@ -13,6 +13,7 @@ class CodeRunner {
         do {
             System.out.println("정수 b를 입력하세요.");
             b = scan.nextInt();
+            
         } while (b < a);
 
         System.out.println(b - a);
